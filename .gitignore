@@ -1,0 +1,11 @@
+.env
+.vscode/
+.idea/
+bin/
+*.exe
+*.out
+*.test
+coverage.out
+*.log
+.DS_Store
+Thumbs.db
