@@ -2,9 +2,11 @@ package route
 
 import (
 	"context"
+	"fmt"
 
 	framework "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/framework"
 	routetool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/route"
+	"github.com/Gautam2920/galli-agent/backend/internal/logger"
 )
 
 type RouteAgent struct {
@@ -21,7 +23,11 @@ func (a *RouteAgent) Name() string {
 	return "Route Agent"
 }
 
-func (a *RouteAgent) Execute(ctx *framework.AgentContext) (*framework.AgentResult, error) {
+func (a *RouteAgent) Execute(
+	ctx *framework.AgentContext,
+) (*framework.AgentResult, error) {
+
+	logger.Log(logger.Route, "Starting route analysis")
 
 	analysis, err := a.tool.Analyse(
 		context.Background(),
@@ -29,6 +35,9 @@ func (a *RouteAgent) Execute(ctx *framework.AgentContext) (*framework.AgentResul
 	)
 
 	if err != nil {
+
+		logger.Log(logger.Route, "Route analysis failed")
+
 		return &framework.AgentResult{
 			Success: false,
 			Message: err.Error(),
@@ -36,6 +45,37 @@ func (a *RouteAgent) Execute(ctx *framework.AgentContext) (*framework.AgentResul
 	}
 
 	ctx.DecisionEngineState.RouteAnalysis = analysis
+
+	logger.Log(
+		logger.Route,
+		fmt.Sprintf(
+			"Distance: %.2f km",
+			analysis.Route.Summary.DistanceKilometers,
+		),
+	)
+
+	logger.Log(
+		logger.Route,
+		fmt.Sprintf(
+			"ETA: %d minutes",
+			analysis.Route.Summary.EstimatedMinutes,
+		),
+	)
+
+	logger.Log(
+		logger.Route,
+		"Complexity: "+analysis.RouteComplexity,
+	)
+
+	logger.Log(
+		logger.Route,
+		fmt.Sprintf(
+			"Confidence: %d%%",
+			analysis.ConfidenceScore,
+		),
+	)
+
+	logger.Log(logger.Route, "Route analysis completed")
 
 	return &framework.AgentResult{
 		Success: true,

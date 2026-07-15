@@ -1,9 +1,9 @@
 package models
 
 type DeliveryIntelligenceReport struct {
-	Distance        float64
-	RiskLevel       string
+	RouteSummary    string
+	RiskSummary     string
+	OverallDecision string
 	ConfidenceScore int
-	Recommendation  string
 	Reason          string
 }
