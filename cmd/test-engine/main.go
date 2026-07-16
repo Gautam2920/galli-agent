@@ -1,11 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/Gautam2920/galli-agent/backend/config"
 	"github.com/Gautam2920/galli-agent/backend/internal/app"
-	framework "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/framework"
 	"github.com/Gautam2920/galli-agent/backend/internal/delivery"
 	"github.com/Gautam2920/galli-agent/backend/internal/location"
 )
@@ -32,17 +32,14 @@ func main() {
 		},
 	}
 
-	ctx := &framework.AgentContext{
-		Delivery: deliveryRequest,
-	}
-
-	err := application.DecisionEngine.Run(ctx)
+	report, err := application.AnalyseDelivery(
+		context.Background(),
+		deliveryRequest,
+	)
 
 	if err != nil {
 		panic(err)
 	}
-
-	report := ctx.DecisionEngineState.DeliveryIntelligenceReport
 
 	fmt.Println()
 	fmt.Println("GALLI AGENT DECISION ENGINE")
@@ -54,6 +51,10 @@ func main() {
 
 	fmt.Println("Risk")
 	fmt.Println(report.RiskSummary)
+	fmt.Println()
+
+	fmt.Println("Partner")
+	fmt.Println(report.PartnerSummary)
 	fmt.Println()
 
 	fmt.Println("Decision")

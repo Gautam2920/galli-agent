@@ -31,7 +31,7 @@ func (t *Tool) Generate(
 	)
 
 	report.PartnerSummary = fmt.Sprintf(
-		"%s (%.1f★)",
+		"%s (%.1f)",
 		state.PartnerAnalysis.RecommendedPartner.Name,
 		state.PartnerAnalysis.RecommendedPartner.Rating,
 	)
