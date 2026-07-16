@@ -57,7 +57,7 @@ func (h *DeliveryHandler) AnalyseDelivery(
 		},
 	}
 
-	report, err := h.app.AnalyseDelivery(
+	result, err := h.app.AnalyseDeliveryWithAI(
 		context.Background(),
 		deliveryRequest,
 	)
@@ -75,17 +75,19 @@ func (h *DeliveryHandler) AnalyseDelivery(
 
 	response := dto.AnalyseDeliveryResponse{
 
-		Decision: report.OverallDecision,
+		Decision: result.Report.OverallDecision,
 
-		Confidence: report.ConfidenceScore,
+		Confidence: result.Report.ConfidenceScore,
 
-		Route: report.RouteSummary,
+		Route: result.Report.RouteSummary,
 
-		Risk: report.RiskSummary,
+		Risk: result.Report.RiskSummary,
 
-		Partner: report.PartnerSummary,
+		Partner: result.Report.PartnerSummary,
 
-		Reason: report.Reason,
+		Reason: result.Report.Reason,
+
+		AIExplanation: result.AIExplanation,
 	}
 
 	w.Header().Set(
@@ -93,5 +95,11 @@ func (h *DeliveryHandler) AnalyseDelivery(
 		"application/json",
 	)
 
-	json.NewEncoder(w).Encode(response)
+	if err := json.NewEncoder(w).Encode(response); err != nil {
+		http.Error(
+			w,
+			"failed to encode response",
+			http.StatusInternalServerError,
+		)
+	}
 }

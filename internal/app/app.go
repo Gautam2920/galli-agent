@@ -5,6 +5,8 @@ import (
 
 	"github.com/Gautam2920/galli-agent/backend/config"
 
+	"github.com/Gautam2920/galli-agent/backend/internal/ai/gemini"
+
 	decisionengine "github.com/Gautam2920/galli-agent/backend/internal/decisionengine"
 	"github.com/Gautam2920/galli-agent/backend/internal/decisionengine/framework"
 	"github.com/Gautam2920/galli-agent/backend/internal/decisionengine/models"
@@ -25,7 +27,13 @@ import (
 )
 
 type App struct {
-	engine *decisionengine.Engine
+	engine        *decisionengine.Engine
+	geminiService *gemini.Service
+}
+
+type AnalysisResult struct {
+	Report        models.DeliveryIntelligenceReport
+	AIExplanation string
 }
 
 func New(cfg *config.Config) *App {
@@ -57,8 +65,21 @@ func New(cfg *config.Config) *App {
 	engine.Register(partnerAgent)
 	engine.Register(summaryAgent)
 
+	geminiClient, err := gemini.NewClient(
+		cfg.GeminiAPIKey,
+		cfg.GeminiModel,
+	)
+	if err != nil {
+		panic(err)
+	}
+
+	geminiService := gemini.NewService(
+		geminiClient,
+	)
+
 	return &App{
-		engine: engine,
+		engine:        engine,
+		geminiService: geminiService,
 	}
 }
 
@@ -77,4 +98,39 @@ func (a *App) AnalyseDelivery(
 	}
 
 	return agentContext.DecisionEngineState.DeliveryIntelligenceReport, nil
+}
+
+func (a *App) AnalyseDeliveryWithAI(
+	ctx context.Context,
+	deliveryRequest delivery.Delivery,
+) (AnalysisResult, error) {
+
+	report, err := a.AnalyseDelivery(
+		ctx,
+		deliveryRequest,
+	)
+
+	if err != nil {
+		return AnalysisResult{}, err
+	}
+
+	result := AnalysisResult{
+		Report: report,
+	}
+
+	if a.geminiService != nil {
+
+		explanation, err := a.geminiService.GenerateDeliveryExplanation(
+			ctx,
+			report,
+		)
+
+		if err != nil {
+			println("Gemini Error:", err.Error())
+		} else {
+			result.AIExplanation = explanation
+		}
+	}
+
+	return result, nil
 }
