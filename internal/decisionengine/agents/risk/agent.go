@@ -26,7 +26,7 @@ func (a *RiskAgent) Execute(
 	ctx *framework.AgentContext,
 ) (*framework.AgentResult, error) {
 
-	logger.Log("RISK", "Starting risk analysis")
+	logger.Log(logger.Risk, "Starting risk analysis")
 
 	analysis := a.tool.Analyse(
 		ctx.DecisionEngineState.RouteAnalysis,
@@ -43,7 +43,15 @@ func (a *RiskAgent) Execute(
 		logger.Risk,
 		fmt.Sprintf(
 			"Risk Score: %d/100",
-			analysis.Score,
+			analysis.RiskScore,
+		),
+	)
+
+	logger.Log(
+		logger.Risk,
+		fmt.Sprintf(
+			"Confidence: %d%%",
+			analysis.ConfidenceScore,
 		),
 	)
 

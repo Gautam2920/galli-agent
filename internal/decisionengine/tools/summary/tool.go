@@ -27,30 +27,32 @@ func (t *Tool) Generate(
 	report.RiskSummary = fmt.Sprintf(
 		"%s Risk (%d/100)",
 		state.RiskAnalysis.Level,
-		state.RiskAnalysis.Score,
+		state.RiskAnalysis.RiskScore,
 	)
 
-	report.ConfidenceScore =
-		(state.RouteAnalysis.ConfidenceScore + state.RiskAnalysis.Score) / 2
+	report.PartnerSummary = fmt.Sprintf(
+		"%s (%.1f★)",
+		state.PartnerAnalysis.RecommendedPartner.Name,
+		state.PartnerAnalysis.RecommendedPartner.Rating,
+	)
 
-	if state.RiskAnalysis.Level == "High" {
+	report.ConfidenceScore = (state.RouteAnalysis.ConfidenceScore +
+		state.RiskAnalysis.ConfidenceScore +
+		state.PartnerAnalysis.ConfidenceScore) / 3
 
-		report.OverallDecision =
-			"Proceed with Caution"
-
-	} else {
-
-		report.OverallDecision =
-			"Proceed"
-
+	switch state.RiskAnalysis.Level {
+	case "High":
+		report.OverallDecision = "Proceed with Caution"
+	default:
+		report.OverallDecision = "Proceed"
 	}
 
-	report.Reason =
-		fmt.Sprintf(
-			"%s %s",
-			state.RouteAnalysis.Reason,
-			state.RiskAnalysis.Reason,
-		)
+	report.Reason = fmt.Sprintf(
+		"%s %s %s",
+		state.RouteAnalysis.Reason,
+		state.RiskAnalysis.Reason,
+		state.PartnerAnalysis.Reason,
+	)
 
 	return report
 }

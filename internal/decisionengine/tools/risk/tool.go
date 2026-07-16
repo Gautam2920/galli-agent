@@ -21,17 +21,20 @@ func (t *Tool) Analyse(
 	switch {
 	case distance < 3:
 		risk.Level = "Low"
-		risk.Score = 95
+		risk.RiskScore = 15
+		risk.ConfidenceScore = 95
 		risk.Reason = "Short delivery distance with minimal operational risk."
 
 	case distance < 8:
 		risk.Level = "Medium"
-		risk.Score = 82
+		risk.RiskScore = 45
+		risk.ConfidenceScore = 90
 		risk.Reason = "Moderate delivery distance requiring standard monitoring."
 
 	default:
 		risk.Level = "High"
-		risk.Score = 68
+		risk.RiskScore = 80
+		risk.ConfidenceScore = 85
 		risk.Reason = "Long delivery distance increases operational uncertainty."
 	}
 

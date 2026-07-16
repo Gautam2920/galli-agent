@@ -1,7 +1,8 @@
 package models
 
 type RiskAnalysis struct {
-	Level  string
-	Score  int
-	Reason string
+	Level           string
+	RiskScore       int
+	ConfidenceScore int
+	Reason          string
 }
