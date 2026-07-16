@@ -7,6 +7,7 @@ const (
 	Workflow = "WORKFLOW"
 	Route    = "ROUTE"
 	Risk     = "RISK"
+	Partner  = "PARTNER"
 	Summary  = "SUMMARY"
 )
 
