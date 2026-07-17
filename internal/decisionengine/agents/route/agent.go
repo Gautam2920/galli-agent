@@ -29,9 +29,19 @@ func (a *RouteAgent) Execute(
 
 	logger.Log(logger.Route, "Starting route analysis")
 
+	pickup := ctx.
+		DecisionEngineState.
+		FulfillmentAnalysis.
+		SelectedCandidate.
+		Store.
+		Location
+
+	destination := ctx.Delivery.Destination
+
 	analysis, err := a.tool.Analyse(
 		context.Background(),
-		ctx.Delivery,
+		pickup,
+		destination,
 	)
 
 	if err != nil {

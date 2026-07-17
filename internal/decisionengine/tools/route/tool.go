@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/Gautam2920/galli-agent/backend/internal/decisionengine/models"
-	"github.com/Gautam2920/galli-agent/backend/internal/delivery"
+	"github.com/Gautam2920/galli-agent/backend/internal/location"
 	"github.com/Gautam2920/galli-agent/backend/internal/spatial/routing"
 )
 
@@ -20,13 +20,14 @@ func NewTool(routingService *routing.Service) *Tool {
 
 func (t *Tool) Analyse(
 	ctx context.Context,
-	delivery delivery.Delivery,
+	pickup location.Location,
+	destination location.Location,
 ) (models.RouteAnalysis, error) {
 
 	route, err := t.routingService.CalculateRoute(
 		ctx,
-		delivery.Pickup,
-		delivery.Destination,
+		pickup,
+		destination,
 	)
 
 	if err != nil {

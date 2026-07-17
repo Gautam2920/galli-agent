@@ -10,18 +10,21 @@ import (
 	decisionengine "github.com/Gautam2920/galli-agent/backend/internal/decisionengine"
 	"github.com/Gautam2920/galli-agent/backend/internal/decisionengine/framework"
 	"github.com/Gautam2920/galli-agent/backend/internal/decisionengine/models"
-	"github.com/Gautam2920/galli-agent/backend/internal/delivery"
 
+	fulfillmentagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/fulfillment"
 	partneragent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/partner"
 	riskagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/risk"
 	routeagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/route"
 	summaryagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/summary"
 
+	fulfillmenttool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/fulfillment"
 	partnertool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/partner"
 	risktool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/risk"
 	routetool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/route"
 	summarytool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/summary"
 
+	"github.com/Gautam2920/galli-agent/backend/internal/delivery"
+	fulfillmentdomain "github.com/Gautam2920/galli-agent/backend/internal/fulfillment"
 	"github.com/Gautam2920/galli-agent/backend/internal/partner"
 	"github.com/Gautam2920/galli-agent/backend/internal/spatial/routing"
 )
@@ -48,18 +51,43 @@ func New(cfg *config.Config) *App {
 	partnerRepository := partner.NewRepository()
 	partnerService := partner.NewService(partnerRepository)
 
+	fulfillmentRepository := fulfillmentdomain.NewRepository()
+	fulfillmentService := fulfillmentdomain.NewService(fulfillmentRepository)
+	fulfillmentScorer := fulfillmentdomain.NewScorer()
+
 	routeTool := routetool.NewTool(routingService)
 	riskTool := risktool.NewTool()
 	partnerTool := partnertool.NewTool(partnerService)
 	summaryTool := summarytool.NewTool()
 
-	routeAgent := routeagent.NewRouteAgent(routeTool)
-	riskAgent := riskagent.NewRiskAgent(riskTool)
-	partnerAgent := partneragent.NewPartnerAgent(partnerTool)
-	summaryAgent := summaryagent.NewSummaryAgent(summaryTool)
+	fulfillmentTool := fulfillmenttool.NewTool(
+		fulfillmentService,
+		fulfillmentScorer,
+	)
+
+	fulfillmentAgent := fulfillmentagent.NewFulfillmentAgent(
+		fulfillmentTool,
+	)
+
+	routeAgent := routeagent.NewRouteAgent(
+		routeTool,
+	)
+
+	riskAgent := riskagent.NewRiskAgent(
+		riskTool,
+	)
+
+	partnerAgent := partneragent.NewPartnerAgent(
+		partnerTool,
+	)
+
+	summaryAgent := summaryagent.NewSummaryAgent(
+		summaryTool,
+	)
 
 	engine := decisionengine.New()
 
+	engine.Register(fulfillmentAgent)
 	engine.Register(routeAgent)
 	engine.Register(riskAgent)
 	engine.Register(partnerAgent)
