@@ -1,23 +1,52 @@
 package framework
 
 import (
+	"fmt"
+
 	"github.com/Gautam2920/galli-agent/backend/internal/logger"
 )
 
 type Workflow struct {
-	agents []Agent
+	nodes map[string]*WorkflowNode
+
+	registrationOrder []string
 }
 
 func NewWorkflow() *Workflow {
-	return &Workflow{}
+	return &Workflow{
+		nodes: make(map[string]*WorkflowNode),
+	}
 }
 
-func (w *Workflow) AddAgent(agent Agent) {
-	w.agents = append(w.agents, agent)
-}
+func (w *Workflow) Register(
+	agent Agent,
+	dependencies ...Dependency,
+) error {
 
-func (w *Workflow) Agents() []Agent {
-	return w.agents
+	if _, exists := w.nodes[agent.Name()]; exists {
+		return fmt.Errorf(
+			"workflow agent %q already registered",
+			agent.Name(),
+		)
+	}
+
+	var deps []string
+
+	if len(dependencies) > 0 {
+		deps = dependencies[0].Agents
+	}
+
+	w.nodes[agent.Name()] = &WorkflowNode{
+		Agent:        agent,
+		Dependencies: deps,
+	}
+
+	w.registrationOrder = append(
+		w.registrationOrder,
+		agent.Name(),
+	)
+
+	return nil
 }
 
 func (w *Workflow) Execute(
@@ -25,16 +54,32 @@ func (w *Workflow) Execute(
 	ctx *AgentContext,
 ) error {
 
-	logger.Log(logger.Workflow, "Starting workflow execution")
+	if err := w.Validate(); err != nil {
+		return err
+	}
 
-	for _, agent := range w.agents {
+	plan, err := w.Plan()
+
+	if err != nil {
+		return err
+	}
+
+	logger.Log(
+		logger.Workflow,
+		"Starting workflow execution",
+	)
+
+	for _, agent := range plan.Agents {
 
 		logger.Log(
 			logger.Workflow,
 			"Executing "+agent.Name(),
 		)
 
-		_, err := executor.Execute(agent, ctx)
+		_, err := executor.Execute(
+			agent,
+			ctx,
+		)
 
 		if err != nil {
 
@@ -52,7 +97,10 @@ func (w *Workflow) Execute(
 		)
 	}
 
-	logger.Log(logger.Workflow, "Workflow execution completed")
+	logger.Log(
+		logger.Workflow,
+		"Workflow execution completed",
+	)
 
 	return nil
 }
