@@ -7,6 +7,7 @@ const (
 	Workflow    = "WORKFLOW"
 	Fulfillment = "FULFILLMENT"
 	Route       = "ROUTE"
+	Weather     = "WEATHER"
 	Risk        = "RISK"
 	Partner     = "PARTNER"
 	Summary     = "SUMMARY"
@@ -15,10 +16,8 @@ const (
 var Enabled = true
 
 func Log(component string, message string) {
-
 	if !Enabled {
 		return
 	}
-
 	fmt.Printf("[%s] %s\n", component, message)
 }

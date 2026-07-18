@@ -16,17 +16,20 @@ import (
 	riskagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/risk"
 	routeagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/route"
 	summaryagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/summary"
+	weatheragent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/weather"
 
 	fulfillmenttool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/fulfillment"
 	partnertool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/partner"
 	risktool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/risk"
 	routetool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/route"
 	summarytool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/summary"
+	weathertool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/weather"
 
 	"github.com/Gautam2920/galli-agent/backend/internal/delivery"
 	fulfillmentdomain "github.com/Gautam2920/galli-agent/backend/internal/fulfillment"
 	"github.com/Gautam2920/galli-agent/backend/internal/partner"
 	"github.com/Gautam2920/galli-agent/backend/internal/spatial/routing"
+	"github.com/Gautam2920/galli-agent/backend/internal/weather"
 )
 
 type App struct {
@@ -48,6 +51,15 @@ func New(cfg *config.Config) *App {
 
 	routingService := routing.NewService(provider)
 
+	weatherProvider := weather.NewOpenWeatherProvider(
+		cfg.OpenWeatherAPIKey,
+		cfg.OpenWeatherBaseURL,
+	)
+
+	weatherService := weather.NewService(
+		weatherProvider,
+	)
+
 	partnerRepository := partner.NewRepository()
 	partnerService := partner.NewService(partnerRepository)
 
@@ -56,8 +68,17 @@ func New(cfg *config.Config) *App {
 	fulfillmentScorer := fulfillmentdomain.NewScorer()
 
 	routeTool := routetool.NewTool(routingService)
+
+	weatherTool := weathertool.NewTool(
+		weatherService,
+	)
+
 	riskTool := risktool.NewTool()
-	partnerTool := partnertool.NewTool(partnerService)
+
+	partnerTool := partnertool.NewTool(
+		partnerService,
+	)
+
 	summaryTool := summarytool.NewTool()
 
 	fulfillmentTool := fulfillmenttool.NewTool(
@@ -71,6 +92,10 @@ func New(cfg *config.Config) *App {
 
 	routeAgent := routeagent.NewRouteAgent(
 		routeTool,
+	)
+
+	weatherAgent := weatheragent.NewWeatherAgent(
+		weatherTool,
 	)
 
 	riskAgent := riskagent.NewRiskAgent(
@@ -87,11 +112,54 @@ func New(cfg *config.Config) *App {
 
 	engine := decisionengine.New()
 
-	engine.Register(fulfillmentAgent)
-	engine.Register(routeAgent)
-	engine.Register(riskAgent)
-	engine.Register(partnerAgent)
-	engine.Register(summaryAgent)
+	if err := engine.Register(
+		fulfillmentAgent,
+	); err != nil {
+		panic(err)
+	}
+
+	if err := engine.Register(
+		routeAgent,
+		framework.DependsOn(fulfillmentAgent.Name()),
+	); err != nil {
+		panic(err)
+	}
+
+	if err := engine.Register(
+		weatherAgent,
+	); err != nil {
+		panic(err)
+	}
+
+	if err := engine.Register(
+		riskAgent,
+		framework.DependsOn(
+			routeAgent.Name(),
+			weatherAgent.Name(),
+		),
+	); err != nil {
+		panic(err)
+	}
+
+	if err := engine.Register(
+		partnerAgent,
+		framework.DependsOn(riskAgent.Name()),
+	); err != nil {
+		panic(err)
+	}
+
+	if err := engine.Register(
+		summaryAgent,
+		framework.DependsOn(
+			fulfillmentAgent.Name(),
+			routeAgent.Name(),
+			weatherAgent.Name(),
+			riskAgent.Name(),
+			partnerAgent.Name(),
+		),
+	); err != nil {
+		panic(err)
+	}
 
 	geminiClient, err := gemini.NewClient(
 		cfg.GeminiAPIKey,
