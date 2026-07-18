@@ -16,6 +16,7 @@ import (
 	riskagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/risk"
 	routeagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/route"
 	summaryagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/summary"
+	trafficagent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/traffic"
 	weatheragent "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/agents/weather"
 
 	fulfillmenttool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/fulfillment"
@@ -23,12 +24,14 @@ import (
 	risktool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/risk"
 	routetool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/route"
 	summarytool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/summary"
+	traffictool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/traffic"
 	weathertool "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/tools/weather"
 
 	"github.com/Gautam2920/galli-agent/backend/internal/delivery"
 	fulfillmentdomain "github.com/Gautam2920/galli-agent/backend/internal/fulfillment"
 	"github.com/Gautam2920/galli-agent/backend/internal/partner"
 	"github.com/Gautam2920/galli-agent/backend/internal/spatial/routing"
+	"github.com/Gautam2920/galli-agent/backend/internal/traffic"
 	"github.com/Gautam2920/galli-agent/backend/internal/weather"
 )
 
@@ -60,6 +63,15 @@ func New(cfg *config.Config) *App {
 		weatherProvider,
 	)
 
+	trafficProvider := traffic.NewTomTomProvider(
+		cfg.TomTomAPIKey,
+		cfg.TomTomBaseURL,
+	)
+
+	trafficService := traffic.NewService(
+		trafficProvider,
+	)
+
 	partnerRepository := partner.NewRepository()
 	partnerService := partner.NewService(partnerRepository)
 
@@ -71,6 +83,10 @@ func New(cfg *config.Config) *App {
 
 	weatherTool := weathertool.NewTool(
 		weatherService,
+	)
+
+	trafficTool := traffictool.NewTool(
+		trafficService,
 	)
 
 	riskTool := risktool.NewTool()
@@ -96,6 +112,10 @@ func New(cfg *config.Config) *App {
 
 	weatherAgent := weatheragent.NewWeatherAgent(
 		weatherTool,
+	)
+
+	trafficAgent := trafficagent.NewTrafficAgent(
+		trafficTool,
 	)
 
 	riskAgent := riskagent.NewRiskAgent(
@@ -132,10 +152,17 @@ func New(cfg *config.Config) *App {
 	}
 
 	if err := engine.Register(
+		trafficAgent,
+	); err != nil {
+		panic(err)
+	}
+
+	if err := engine.Register(
 		riskAgent,
 		framework.DependsOn(
 			routeAgent.Name(),
 			weatherAgent.Name(),
+			trafficAgent.Name(),
 		),
 	); err != nil {
 		panic(err)
@@ -154,6 +181,7 @@ func New(cfg *config.Config) *App {
 			fulfillmentAgent.Name(),
 			routeAgent.Name(),
 			weatherAgent.Name(),
+			trafficAgent.Name(),
 			riskAgent.Name(),
 			partnerAgent.Name(),
 		),

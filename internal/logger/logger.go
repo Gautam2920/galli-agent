@@ -8,6 +8,7 @@ const (
 	Fulfillment = "FULFILLMENT"
 	Route       = "ROUTE"
 	Weather     = "WEATHER"
+	Traffic     = "TRAFFIC"
 	Risk        = "RISK"
 	Partner     = "PARTNER"
 	Summary     = "SUMMARY"

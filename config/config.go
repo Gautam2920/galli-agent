@@ -14,6 +14,9 @@ type Config struct {
 	OpenWeatherAPIKey  string
 	OpenWeatherBaseURL string
 
+	TomTomAPIKey  string
+	TomTomBaseURL string
+
 	GeminiAPIKey string
 	GeminiModel  string
 }
@@ -31,6 +34,9 @@ func Load() *Config {
 		OpenWeatherAPIKey:  os.Getenv("OPENWEATHER_API_KEY"),
 		OpenWeatherBaseURL: os.Getenv("OPENWEATHER_BASE_URL"),
 
+		TomTomAPIKey:  os.Getenv("TOMTOM_API_KEY"),
+		TomTomBaseURL: os.Getenv("TOMTOM_BASE_URL"),
+
 		GeminiAPIKey: os.Getenv("GEMINI_API_KEY"),
 		GeminiModel:  os.Getenv("GEMINI_MODEL"),
 	}
@@ -43,6 +49,10 @@ func Load() *Config {
 		cfg.OpenWeatherBaseURL = "https://api.openweathermap.org"
 	}
 
+	if cfg.TomTomBaseURL == "" {
+		cfg.TomTomBaseURL = "https://api.tomtom.com"
+	}
+
 	if cfg.GeminiModel == "" {
 		cfg.GeminiModel = "gemini-2.5-flash"
 	}
@@ -53,6 +63,10 @@ func Load() *Config {
 
 	if cfg.OpenWeatherAPIKey == "" {
 		log.Fatal("OPENWEATHER_API_KEY is not set")
+	}
+
+	if cfg.TomTomAPIKey == "" {
+		log.Fatal("TOMTOM_API_KEY is not set")
 	}
 
 	if cfg.GeminiAPIKey == "" {
