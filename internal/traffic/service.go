@@ -3,7 +3,7 @@ package traffic
 import (
 	"context"
 
-	"github.com/Gautam2920/galli-agent/backend/internal/location"
+	"github.com/Gautam2920/galli-agent/backend/internal/spatial/routing"
 )
 
 type Service struct {
@@ -18,12 +18,11 @@ func NewService(provider Provider) *Service {
 
 func (s *Service) GetCurrentTraffic(
 	ctx context.Context,
-	pickup location.Location,
-	destination location.Location,
-) (CurrentTraffic, error) {
+	points []routing.RoutePoint,
+) ([]CurrentTraffic, error) {
+
 	return s.provider.GetCurrentTraffic(
 		ctx,
-		pickup,
-		destination,
+		points,
 	)
 }

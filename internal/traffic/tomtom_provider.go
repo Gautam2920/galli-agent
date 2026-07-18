@@ -4,9 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 
-	"github.com/Gautam2920/galli-agent/backend/internal/location"
+	"github.com/Gautam2920/galli-agent/backend/internal/spatial/routing"
 )
 
 type TomTomProvider struct {
@@ -29,58 +30,94 @@ func NewTomTomProvider(
 
 func (p *TomTomProvider) GetCurrentTraffic(
 	ctx context.Context,
-	pickup location.Location,
-	destination location.Location,
-) (CurrentTraffic, error) {
+	points []routing.RoutePoint,
+) ([]CurrentTraffic, error) {
 
-	url := fmt.Sprintf(
-		"%s/traffic/services/4/flowSegmentData/absolute/10/json?point=%f,%f&unit=KMPH&openLr=false&key=%s",
-		p.baseURL,
-		destination.Latitude,
-		destination.Longitude,
-		p.apiKey,
-	)
+	observations := make([]CurrentTraffic, 0, len(points))
 
-	req, err := http.NewRequestWithContext(
-		ctx,
-		http.MethodGet,
-		url,
-		nil,
-	)
-	if err != nil {
-		return CurrentTraffic{}, err
-	}
+	for i, point := range points {
 
-	resp, err := p.client.Do(req)
-	if err != nil {
-		return CurrentTraffic{}, err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return CurrentTraffic{}, fmt.Errorf(
-			"traffic api returned status %d",
-			resp.StatusCode,
+		fmt.Printf(
+			"\nPoint %d -> Lat: %.6f Lon: %.6f\n",
+			i+1,
+			point.Latitude,
+			point.Longitude,
 		)
+
+		url := fmt.Sprintf(
+			"%s/traffic/services/4/flowSegmentData/absolute/10/json?point=%f,%f&unit=KMPH&openLr=false&key=%s",
+			p.baseURL,
+			point.Latitude,
+			point.Longitude,
+			p.apiKey,
+		)
+
+		fmt.Println("URL:", url)
+
+		req, err := http.NewRequestWithContext(
+			ctx,
+			http.MethodGet,
+			url,
+			nil,
+		)
+
+		if err != nil {
+			fmt.Println("Create request failed:", err)
+			continue
+		}
+
+		resp, err := p.client.Do(req)
+
+		if err != nil {
+			fmt.Println("HTTP request failed:", err)
+			continue
+		}
+
+		if resp.StatusCode != http.StatusOK {
+
+			body, _ := io.ReadAll(resp.Body)
+
+			fmt.Println("Status:", resp.Status)
+			fmt.Println("Body:")
+			fmt.Println(string(body))
+
+			resp.Body.Close()
+			continue
+		}
+
+		var response tomTomFlowSegmentResponse
+
+		err = json.NewDecoder(resp.Body).Decode(&response)
+		resp.Body.Close()
+
+		if err != nil {
+			fmt.Println("Decode failed:", err)
+			continue
+		}
+
+		fmt.Println("Request succeeded.")
+
+		data := response.FlowSegmentData
+
+		delay := data.CurrentTravelTime - data.FreeFlowTravelTime
+
+		if delay < 0 {
+			delay = 0
+		}
+
+		observations = append(observations, CurrentTraffic{
+			CurrentSpeedKmph:  data.CurrentSpeed,
+			FreeFlowSpeedKmph: data.FreeFlowSpeed,
+			DelaySeconds:      delay,
+			RoadClosed:        data.RoadClosure,
+		})
 	}
 
-	var response tomTomFlowSegmentResponse
+	fmt.Printf("\nSuccessful observations: %d\n", len(observations))
 
-	if err := json.NewDecoder(resp.Body).Decode(&response); err != nil {
-		return CurrentTraffic{}, err
+	if len(observations) == 0 {
+		return nil, fmt.Errorf("unable to retrieve traffic data for any sampled route point")
 	}
 
-	data := response.FlowSegmentData
-
-	delay := data.CurrentTravelTime - data.FreeFlowTravelTime
-	if delay < 0 {
-		delay = 0
-	}
-
-	return CurrentTraffic{
-		CurrentSpeedKmph:  data.CurrentSpeed,
-		FreeFlowSpeedKmph: data.FreeFlowSpeed,
-		DelaySeconds:      delay,
-		RoadClosed:        data.RoadClosure,
-	}, nil
+	return observations, nil
 }

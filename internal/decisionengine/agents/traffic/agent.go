@@ -1,7 +1,6 @@
 package traffic
 
 import (
-	"context"
 	"fmt"
 
 	framework "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/framework"
@@ -32,11 +31,7 @@ func (a *TrafficAgent) Execute(
 
 	logger.Log(logger.Traffic, "Starting traffic analysis")
 
-	analysis, err := a.tool.Analyse(
-		context.Background(),
-		ctx.Delivery.Pickup,
-		ctx.Delivery.Destination,
-	)
+	analysis, err := a.tool.Analyse(ctx)
 
 	if err != nil {
 

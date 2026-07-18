@@ -153,6 +153,7 @@ func New(cfg *config.Config) *App {
 
 	if err := engine.Register(
 		trafficAgent,
+		framework.DependsOn(routeAgent.Name()),
 	); err != nil {
 		panic(err)
 	}
@@ -213,6 +214,7 @@ func (a *App) AnalyseDelivery(
 ) (models.DeliveryIntelligenceReport, error) {
 
 	agentContext := &framework.AgentContext{
+		Context:  ctx,
 		Delivery: deliveryRequest,
 	}
 

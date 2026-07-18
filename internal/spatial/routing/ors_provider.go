@@ -5,10 +5,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 
 	"github.com/Gautam2920/galli-agent/backend/internal/location"
+	"github.com/twpayne/go-polyline"
 )
 
 type OpenRouteServiceProvider struct {
@@ -75,12 +77,21 @@ func (p *OpenRouteServiceProvider) CalculateRoute(
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return Route{}, fmt.Errorf("ORS returned status %d", resp.StatusCode)
+
+		return Route{}, fmt.Errorf(
+			"ORS returned status %d",
+			resp.StatusCode,
+		)
+	}
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return Route{}, fmt.Errorf("read ORS response: %w", err)
 	}
 
 	var orsResponse orsDirectionsResponse
 
-	if err := json.NewDecoder(resp.Body).Decode(&orsResponse); err != nil {
+	if err := json.Unmarshal(body, &orsResponse); err != nil {
 		return Route{}, fmt.Errorf("decode ORS response: %w", err)
 	}
 
@@ -88,12 +99,43 @@ func (p *OpenRouteServiceProvider) CalculateRoute(
 		return Route{}, fmt.Errorf("ORS returned no routes")
 	}
 
-	summary := orsResponse.Routes[0].Summary
+	route := orsResponse.Routes[0]
+	summary := route.Summary
+
+	coords, _, err := polyline.DecodeCoords([]byte(route.Geometry))
+	if err != nil {
+		return Route{}, fmt.Errorf(
+			"decode ORS polyline: %w",
+			err,
+		)
+	}
+
+	routeGeometry := make(
+		[]RoutePoint,
+		0,
+		len(coords),
+	)
+
+	for _, coordinate := range coords {
+
+		if len(coordinate) != 2 {
+			continue
+		}
+
+		routeGeometry = append(
+			routeGeometry,
+			RoutePoint{
+				Latitude:  coordinate[0],
+				Longitude: coordinate[1],
+			},
+		)
+	}
 
 	return Route{
 		Summary: RouteSummary{
 			DistanceKilometers: summary.Distance / 1000,
 			EstimatedMinutes:   int(summary.Duration / 60),
 		},
+		Geometry: routeGeometry,
 	}, nil
 }

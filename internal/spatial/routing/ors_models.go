@@ -9,7 +9,8 @@ type orsDirectionsResponse struct {
 }
 
 type orsRoute struct {
-	Summary orsSummary `json:"summary"`
+	Summary  orsSummary `json:"summary"`
+	Geometry string     `json:"geometry"`
 }
 
 type orsSummary struct {

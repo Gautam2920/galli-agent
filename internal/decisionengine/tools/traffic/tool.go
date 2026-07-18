@@ -1,10 +1,11 @@
 package traffic
 
 import (
-	"context"
+	"fmt"
 
+	framework "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/framework"
 	"github.com/Gautam2920/galli-agent/backend/internal/decisionengine/models"
-	"github.com/Gautam2920/galli-agent/backend/internal/location"
+	"github.com/Gautam2920/galli-agent/backend/internal/spatial/sampling"
 	trafficdomain "github.com/Gautam2920/galli-agent/backend/internal/traffic"
 )
 
@@ -22,31 +23,110 @@ func NewTool(
 }
 
 func (t *Tool) Analyse(
-	ctx context.Context,
-	pickup location.Location,
-	destination location.Location,
+	ctx *framework.AgentContext,
 ) (models.TrafficAnalysis, error) {
 
-	currentTraffic, err := t.trafficService.GetCurrentTraffic(
-		ctx,
-		pickup,
-		destination,
+	sampledPoints := sampling.SampleRoute(
+		ctx.DecisionEngineState.RouteAnalysis.Route.Geometry,
+		sampling.DefaultSampleCount,
+	)
+
+	for i, point := range sampledPoints {
+		fmt.Printf(
+			"Sample %d -> Lat: %.6f Lon: %.6f\n",
+			i+1,
+			point.Latitude,
+			point.Longitude,
+		)
+	}
+
+	trafficObservations, err := t.trafficService.GetCurrentTraffic(
+		ctx.Context,
+		sampledPoints,
 	)
 
 	if err != nil {
+		fmt.Println("Traffic service error:", err)
 		return models.TrafficAnalysis{}, err
 	}
 
-	analysis := models.TrafficAnalysis{
-		Traffic: currentTraffic,
+	fmt.Printf(
+		"Traffic observations returned: %d\n",
+		len(trafficObservations),
+	)
+
+	if len(trafficObservations) == 0 {
+		fmt.Println("No traffic observations received.")
+		return models.TrafficAnalysis{}, nil
 	}
 
-	analysis.CongestionLevel = determineCongestion(currentTraffic)
-	analysis.RiskScore = determineRisk(analysis.CongestionLevel, currentTraffic)
-	analysis.ConfidenceScore = determineConfidence(analysis.RiskScore)
-	analysis.Reason = generateReason(currentTraffic, analysis.CongestionLevel)
+	aggregatedTraffic := aggregateTraffic(
+		trafficObservations,
+		len(sampledPoints),
+	)
+
+	analysis := models.TrafficAnalysis{
+		Traffic: trafficObservations,
+	}
+
+	analysis.CongestionLevel = determineCongestion(
+		aggregatedTraffic,
+	)
+
+	analysis.RiskScore = determineRisk(
+		analysis.CongestionLevel,
+		aggregatedTraffic,
+	)
+
+	analysis.ConfidenceScore = aggregatedTraffic.TrafficConfidence
+
+	analysis.Reason = generateReason(
+		aggregatedTraffic,
+		analysis.CongestionLevel,
+	)
 
 	return analysis, nil
+}
+
+func aggregateTraffic(
+	observations []trafficdomain.CurrentTraffic,
+	expectedSamples int,
+) trafficdomain.CurrentTraffic {
+
+	var totalCurrentSpeed int
+	var totalFreeFlowSpeed int
+
+	maxDelay := 0
+	roadClosed := false
+
+	for _, observation := range observations {
+
+		totalCurrentSpeed += observation.CurrentSpeedKmph
+		totalFreeFlowSpeed += observation.FreeFlowSpeedKmph
+
+		if observation.DelaySeconds > maxDelay {
+			maxDelay = observation.DelaySeconds
+		}
+
+		if observation.RoadClosed {
+			roadClosed = true
+		}
+	}
+
+	count := len(observations)
+
+	confidence := 100
+	if expectedSamples > 0 {
+		confidence = count * 100 / expectedSamples
+	}
+
+	return trafficdomain.CurrentTraffic{
+		CurrentSpeedKmph:  totalCurrentSpeed / count,
+		FreeFlowSpeedKmph: totalFreeFlowSpeed / count,
+		DelaySeconds:      maxDelay,
+		RoadClosed:        roadClosed,
+		TrafficConfidence: confidence,
+	}
 }
 
 func determineCongestion(
@@ -95,23 +175,6 @@ func determineRisk(
 
 	default:
 		return 90
-	}
-}
-
-func determineConfidence(
-	risk int,
-) int {
-
-	switch {
-
-	case risk <= 20:
-		return 96
-
-	case risk <= 50:
-		return 90
-
-	default:
-		return 84
 	}
 }
 
