@@ -187,51 +187,6 @@ export function DashboardLayout() {
             <div className="hidden lg:grid lg:grid-cols-12 lg:gap-12 max-w-7xl mx-auto items-start">
               <main className="lg:col-span-8 flex flex-col gap-10">
                 <div className="relative overflow-hidden rounded-2xl border border-accent-indigo/15 bg-gradient-to-br from-white via-[#FCFAF8] to-bg-base/30 p-8 shadow-overlay hover:shadow-[0_32px_80px_-16px_rgba(36,32,56,0.12)] transition-all duration-300 group">
-                  <div className="absolute top-0 right-0 w-96 h-full opacity-20 pointer-events-none group-hover:opacity-30 transition-opacity duration-300">
-                    <svg
-                      viewBox="0 0 200 120"
-                      className="w-full h-full text-accent-indigo"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="0.8"
-                    >
-                      <line
-                        x1="20"
-                        y1="10"
-                        x2="20"
-                        y2="110"
-                        strokeDasharray="2 2"
-                        stroke="var(--color-border-hover)"
-                      />
-                      <line
-                        x1="80"
-                        y1="10"
-                        x2="80"
-                        y2="110"
-                        strokeDasharray="2 2"
-                        stroke="var(--color-border-hover)"
-                      />
-                      <line
-                        x1="140"
-                        y1="10"
-                        x2="140"
-                        y2="110"
-                        strokeDasharray="2 2"
-                        stroke="var(--color-border-hover)"
-                      />
-                      <path
-                        d="M20,90 C80,90 140,30 180,30"
-                        className="animate-dash"
-                        strokeWidth="1.2"
-                        stroke="var(--color-accent-indigo)"
-                      />
-                      <circle cx="20" cy="90" r="4" fill="var(--color-accent-indigo)" />
-                      <circle cx="80" cy="90" r="3" fill="var(--color-accent-purple)" />
-                      <circle cx="140" cy="30" r="3" fill="var(--color-accent-indigo)" />
-                      <circle cx="180" cy="30" r="4" fill="var(--color-accent-purple)" />
-                    </svg>
-                  </div>
-
                   <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
                     <div className="flex-1 max-w-md">
                       <div className="flex items-center gap-2 text-text-muted">
@@ -253,9 +208,52 @@ export function DashboardLayout() {
                       </button>
                     </div>
 
-                    <div className="w-full md:w-60 h-40 rounded-xl bg-bg-base border border-border-subtle flex items-center justify-center overflow-hidden shadow-flat relative">
-                      <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-bg-surface/5 to-transparent pointer-events-none" />
-                      <div className="relative flex flex-col items-center justify-center p-4">
+                    <div className="w-full md:w-60 h-40 rounded-xl bg-bg-base border border-border-subtle flex items-center justify-center overflow-hidden shadow-flat relative p-4">
+                      <div className="absolute inset-0 opacity-15 pointer-events-none">
+                        <svg
+                          viewBox="0 0 200 120"
+                          className="w-full h-full text-accent-indigo"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="1"
+                        >
+                          <line
+                            x1="20"
+                            y1="10"
+                            x2="20"
+                            y2="110"
+                            strokeDasharray="2 2"
+                            stroke="var(--color-border-hover)"
+                          />
+                          <line
+                            x1="80"
+                            y1="10"
+                            x2="80"
+                            y2="110"
+                            strokeDasharray="2 2"
+                            stroke="var(--color-border-hover)"
+                          />
+                          <line
+                            x1="140"
+                            y1="10"
+                            x2="140"
+                            y2="110"
+                            strokeDasharray="2 2"
+                            stroke="var(--color-border-hover)"
+                          />
+                          <path
+                            d="M20,90 C80,90 140,30 180,30"
+                            className="animate-dash"
+                            strokeWidth="1.5"
+                            stroke="var(--color-accent-indigo)"
+                          />
+                          <circle cx="20" cy="90" r="4" fill="var(--color-accent-indigo)" />
+                          <circle cx="80" cy="90" r="3" fill="var(--color-accent-purple)" />
+                          <circle cx="140" cy="30" r="3" fill="var(--color-accent-indigo)" />
+                          <circle cx="180" cy="30" r="4" fill="var(--color-accent-purple)" />
+                        </svg>
+                      </div>
+                      <div className="relative flex flex-col items-center justify-center">
                         <div className="flex items-center justify-center h-12 w-12 rounded-full bg-bg-surface shadow-card border border-border-subtle relative">
                           <span className="absolute inset-0 rounded-full border border-accent-indigo/30 animate-pulse-ring" />
                           <Activity className="h-5 w-5 text-accent-indigo" />
@@ -483,7 +481,7 @@ export function DashboardLayout() {
                       </div>
                     </div>
 
-                    <button className="mt-2 w-full h-11 rounded-xl text-xs font-semibold text-button-primary-text bg-accent-indigo hover:bg-accent-purple active:scale-98 hover:-translate-y-0.5 transition-all duration-200 shadow-card border border-accent-indigo/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)]">
+                    <button className="mt-2 w-full h-11 rounded-xl text-xs font-semibold text-button-primary-text bg-accent-indigo hover:bg-accent-purple active:scale-98 hover:-translate-y-0.5 transition-all duration-200 shadow-card border border-accent-indigo/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center gap-2">
                       <Sparkles className="h-4 w-4" />
                       <span>Analyze Route</span>
                     </button>
