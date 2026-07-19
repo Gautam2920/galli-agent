@@ -1,0 +1,40 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap');
+@import 'tailwindcss';
+
+@theme {
+  --color-bg-base: #f7ece1;
+  --color-bg-surface: #ffffff;
+  --color-text-primary: #242038;
+  --color-text-secondary: #5a566c;
+  --color-text-muted: #8d86c9;
+  --color-border-subtle: rgba(36, 32, 56, 0.05);
+  --color-border-hover: rgba(36, 32, 56, 0.1);
+
+  --color-accent-indigo: #725ac1;
+  --color-accent-purple: #8d86c9;
+  --color-accent-emerald: #10b981;
+  --color-accent-amber: #f59e0b;
+  --color-accent-rose: #ef4444;
+
+  --color-button-primary-bg: #725ac1;
+  --color-button-primary-text: #ffffff;
+
+  --font-sans: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 14px;
+  --radius-xl: 20px;
+
+  --shadow-flat: 0 1px 2px 0 rgba(36, 32, 56, 0.02);
+  --shadow-card: 0 8px 30px -8px rgba(36, 32, 56, 0.06), 0 1px 3px 0 rgba(36, 32, 56, 0.01);
+  --shadow-overlay: 0 32px 64px -12px rgba(36, 32, 56, 0.1), 0 1px 10px 0 rgba(36, 32, 56, 0.02);
+  --shadow-glow: 0 0 20px rgba(114, 90, 193, 0.1);
+
+  --transition-ease-spring: cubic-bezier(0.175, 0.885, 0.32, 1.1);
+  --transition-ease-smooth: cubic-bezier(0.16, 1, 0.3, 1);
+
+  --duration-step-delay: 180ms;
+  --duration-fade-in: 350ms;
+}
