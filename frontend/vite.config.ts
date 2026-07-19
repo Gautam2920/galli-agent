@@ -10,13 +10,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg', 'maskable-512x512.png', 'screenshot-desktop.png', 'screenshot-mobile.png'],
       manifest: {
+        id: '/',
         name: 'Galli Agent Logistics Intelligence',
         short_name: 'Galli Agent',
         description: 'AI-Powered Last-Mile Logistics Decision Terminal',
-        theme_color: '#0F172A',
-        background_color: '#F8FAFC',
+        theme_color: '#725ac1',
+        background_color: '#f7ece1',
         display: 'standalone',
         scope: '/',
         start_url: '/',
@@ -24,18 +25,36 @@ export default defineConfig({
           {
             src: 'pwa-192x192.png',
             sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
+            type: 'image/png',
+            purpose: 'any'
           },
           {
             src: 'pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable'
+            purpose: 'any'
+          },
+          {
+            src: 'maskable-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable'
+          }
+        ],
+        screenshots: [
+          {
+            src: 'screenshot-desktop.png',
+            sizes: '1280x720',
+            type: 'image/png',
+            form_factor: 'wide',
+            label: 'Desktop Terminal Dashboard'
+          },
+          {
+            src: 'screenshot-mobile.png',
+            sizes: '360x640',
+            type: 'image/png',
+            form_factor: 'narrow',
+            label: 'Mobile Telemetry Setup'
           }
         ]
       },
