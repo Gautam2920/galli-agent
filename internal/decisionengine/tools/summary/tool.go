@@ -16,43 +16,106 @@ func (t *Tool) Generate(
 	state models.DecisionEngineState,
 ) models.DeliveryIntelligenceReport {
 
-	report := models.DeliveryIntelligenceReport{}
+	return models.DeliveryIntelligenceReport{
+		RouteSummary: t.generateRouteSummary(
+			state.RouteAnalysis,
+		),
 
-	report.RouteSummary = fmt.Sprintf(
-		"%.2f km route with an estimated travel time of %d minutes.",
-		state.RouteAnalysis.Route.Summary.DistanceKilometers,
-		state.RouteAnalysis.Route.Summary.EstimatedMinutes,
-	)
+		RiskSummary: t.generateRiskSummary(
+			state.RiskAnalysis,
+		),
 
-	report.RiskSummary = fmt.Sprintf(
-		"%s Risk (%d/100)",
-		state.RiskAnalysis.Level,
-		state.RiskAnalysis.RiskScore,
-	)
+		PartnerSummary: t.generatePartnerSummary(
+			state.PartnerAnalysis,
+		),
 
-	report.PartnerSummary = fmt.Sprintf(
-		"%s (%.1f)",
-		state.PartnerAnalysis.RecommendedPartner.Name,
-		state.PartnerAnalysis.RecommendedPartner.Rating,
-	)
+		OverallDecision: t.determineOverallDecision(
+			state.RiskAnalysis,
+		),
 
-	report.ConfidenceScore = (state.RouteAnalysis.ConfidenceScore +
-		state.RiskAnalysis.ConfidenceScore +
-		state.PartnerAnalysis.ConfidenceScore) / 3
+		ConfidenceScore: t.determineConfidence(
+			state.RiskAnalysis,
+			state.PartnerAnalysis,
+		),
 
-	switch state.RiskAnalysis.Level {
-	case "High":
-		report.OverallDecision = "Proceed with Caution"
-	default:
-		report.OverallDecision = "Proceed"
+		Reason: t.generateExecutiveSummary(
+			state.RouteAnalysis,
+			state.WeatherAnalysis,
+			state.TrafficAnalysis,
+			state.RiskAnalysis,
+			state.PartnerAnalysis,
+		),
 	}
+}
 
-	report.Reason = fmt.Sprintf(
-		"%s %s %s",
-		state.RouteAnalysis.Reason,
-		state.RiskAnalysis.Reason,
-		state.PartnerAnalysis.Reason,
+func (t *Tool) generateRouteSummary(
+	route models.RouteAnalysis,
+) string {
+
+	return fmt.Sprintf(
+		"%.2f km route with an estimated travel time of %d minutes.",
+		route.Route.Summary.DistanceKilometers,
+		route.Route.Summary.EstimatedMinutes,
 	)
+}
 
-	return report
+func (t *Tool) generateRiskSummary(
+	risk models.RiskAnalysis,
+) string {
+
+	return fmt.Sprintf(
+		"%s Risk (%d/100)",
+		risk.Level,
+		risk.RiskScore,
+	)
+}
+
+func (t *Tool) generatePartnerSummary(
+	partner models.PartnerAnalysis,
+) string {
+
+	return fmt.Sprintf(
+		"%s (%.1f)",
+		partner.RecommendedPartner.Name,
+		partner.RecommendedPartner.Rating,
+	)
+}
+
+func (t *Tool) determineOverallDecision(
+	risk models.RiskAnalysis,
+) string {
+
+	switch risk.Level {
+
+	case "High":
+		return "Proceed with Caution"
+
+	default:
+		return "Proceed"
+	}
+}
+
+func (t *Tool) determineConfidence(
+	risk models.RiskAnalysis,
+	partner models.PartnerAnalysis,
+) int {
+	return (risk.ConfidenceScore + partner.ConfidenceScore) / 2
+}
+
+func (t *Tool) generateExecutiveSummary(
+	route models.RouteAnalysis,
+	weather models.WeatherAnalysis,
+	traffic models.TrafficAnalysis,
+	risk models.RiskAnalysis,
+	partner models.PartnerAnalysis,
+) string {
+
+	return fmt.Sprintf(
+		"%s %s %s %s %s",
+		route.Reason,
+		weather.Reason,
+		traffic.Reason,
+		risk.Reason,
+		partner.Reason,
+	)
 }

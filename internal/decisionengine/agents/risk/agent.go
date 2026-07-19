@@ -30,6 +30,8 @@ func (a *RiskAgent) Execute(
 
 	analysis := a.tool.Analyse(
 		ctx.DecisionEngineState.RouteAnalysis,
+		ctx.DecisionEngineState.WeatherAnalysis,
+		ctx.DecisionEngineState.TrafficAnalysis,
 	)
 
 	ctx.DecisionEngineState.RiskAnalysis = analysis
