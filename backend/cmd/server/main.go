@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/Gautam2920/galli-agent/backend/config"
 	"github.com/Gautam2920/galli-agent/backend/internal/api/router"
@@ -10,15 +11,21 @@ import (
 )
 
 func main() {
-
 	cfg := config.Load()
 
 	application := app.New(cfg)
 
-	log.Println("Server started on :8080")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	addr := ":" + port
+
+	log.Printf("Server started on %s", addr)
 
 	err := http.ListenAndServe(
-		":8080",
+		addr,
 		router.New(application),
 	)
 
