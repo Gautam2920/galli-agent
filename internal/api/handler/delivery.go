@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/Gautam2920/galli-agent/backend/internal/api/dto"
+	"github.com/Gautam2920/galli-agent/backend/internal/api/mapper"
 	"github.com/Gautam2920/galli-agent/backend/internal/app"
 	"github.com/Gautam2920/galli-agent/backend/internal/delivery"
 	"github.com/Gautam2920/galli-agent/backend/internal/location"
@@ -73,22 +74,7 @@ func (h *DeliveryHandler) AnalyseDelivery(
 		return
 	}
 
-	response := dto.AnalyseDeliveryResponse{
-
-		Decision: result.Report.OverallDecision,
-
-		Confidence: result.Report.ConfidenceScore,
-
-		Route: result.Report.RouteSummary,
-
-		Risk: result.Report.RiskSummary,
-
-		Partner: result.Report.PartnerSummary,
-
-		Reason: result.Report.Reason,
-
-		AIExplanation: result.AIExplanation,
-	}
+	response := mapper.ToAnalyseDeliveryResponse(result)
 
 	w.Header().Set(
 		"Content-Type",
@@ -96,6 +82,7 @@ func (h *DeliveryHandler) AnalyseDelivery(
 	)
 
 	if err := json.NewEncoder(w).Encode(response); err != nil {
+
 		http.Error(
 			w,
 			"failed to encode response",

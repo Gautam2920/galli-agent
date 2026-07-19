@@ -41,6 +41,7 @@ type App struct {
 }
 
 type AnalysisResult struct {
+	State         models.DecisionEngineState
 	Report        models.DeliveryIntelligenceReport
 	AIExplanation string
 }
@@ -211,7 +212,7 @@ func New(cfg *config.Config) *App {
 func (a *App) AnalyseDelivery(
 	ctx context.Context,
 	deliveryRequest delivery.Delivery,
-) (models.DeliveryIntelligenceReport, error) {
+) (models.DecisionEngineState, error) {
 
 	agentContext := &framework.AgentContext{
 		Context:  ctx,
@@ -220,10 +221,10 @@ func (a *App) AnalyseDelivery(
 
 	err := a.engine.Run(agentContext)
 	if err != nil {
-		return models.DeliveryIntelligenceReport{}, err
+		return models.DecisionEngineState{}, err
 	}
 
-	return agentContext.DecisionEngineState.DeliveryIntelligenceReport, nil
+	return agentContext.DecisionEngineState, nil
 }
 
 func (a *App) AnalyseDeliveryWithAI(
@@ -231,7 +232,7 @@ func (a *App) AnalyseDeliveryWithAI(
 	deliveryRequest delivery.Delivery,
 ) (AnalysisResult, error) {
 
-	report, err := a.AnalyseDelivery(
+	state, err := a.AnalyseDelivery(
 		ctx,
 		deliveryRequest,
 	)
@@ -241,14 +242,15 @@ func (a *App) AnalyseDeliveryWithAI(
 	}
 
 	result := AnalysisResult{
-		Report: report,
+		State:  state,
+		Report: state.DeliveryIntelligenceReport,
 	}
 
 	if a.geminiService != nil {
 
 		explanation, err := a.geminiService.GenerateDeliveryExplanation(
 			ctx,
-			report,
+			result.Report,
 		)
 
 		if err != nil {
