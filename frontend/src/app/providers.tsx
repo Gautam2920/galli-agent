@@ -1,5 +1,6 @@
 import { ReactNode, useState, lazy, Suspense } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { DispatchProvider } from "@/features/dispatch";
 
 const ReactQueryDevtools = import.meta.env.DEV
   ? lazy(() =>
@@ -29,7 +30,7 @@ export function AppProviders({ children }: AppProvidersProps) {
 
   return (
     <QueryClientProvider client={queryClient}>
-      {children}
+      <DispatchProvider>{children}</DispatchProvider>
       {import.meta.env.DEV && (
         <Suspense fallback={null}>
           <ReactQueryDevtools initialIsOpen={false} />

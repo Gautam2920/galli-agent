@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import {
   Truck,
   MapPin,
@@ -16,6 +16,8 @@ import {
   AlertTriangle,
 } from 'lucide-react';
 import { OfflineFallback } from '@/shared/components/OfflineFallback';
+import { DispatchSetupModule } from '@/features/dispatch';
+import { LazyMap } from '@/features/map';
 
 type TabType = 'setup' | 'decision' | 'telemetry' | 'map' | 'developer';
 
@@ -466,66 +468,7 @@ export function DashboardLayout() {
                           Dispatch Input & Presets
                         </span>
                       </div>
-
-                      <div className="flex flex-col gap-5">
-                        <div className="flex flex-col gap-2">
-                          <label
-                            htmlFor="pickup-input"
-                            className="text-[9px] font-bold uppercase tracking-wider text-text-secondary"
-                          >
-                            Pickup Address
-                          </label>
-                          <div className="relative">
-                            <input
-                              id="pickup-input"
-                              type="text"
-                              placeholder="Enter pickup location"
-                              className="w-full h-11 pl-10 pr-4 rounded-xl border border-border-subtle bg-bg-base/70 text-xs focus:outline-none focus:ring-2 focus:ring-accent-indigo/15 focus:border-accent-indigo transition-all duration-200 shadow-[inset_0_2px_4px_rgba(36,32,56,0.02)]"
-                            />
-                            <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-text-muted" />
-                          </div>
-                        </div>
-
-                        <div className="flex flex-col gap-2">
-                          <label
-                            htmlFor="destination-input"
-                            className="text-[9px] font-bold uppercase tracking-wider text-text-secondary"
-                          >
-                            Destination Address
-                          </label>
-                          <div className="relative">
-                            <input
-                              id="destination-input"
-                              type="text"
-                              placeholder="Enter destination"
-                              className="w-full h-11 pl-10 pr-4 rounded-xl border border-border-subtle bg-bg-base/70 text-xs focus:outline-none focus:ring-2 focus:ring-accent-indigo/15 focus:border-accent-indigo transition-all duration-200 shadow-[inset_0_2px_4px_rgba(36,32,56,0.02)]"
-                            />
-                            <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-text-muted" />
-                          </div>
-                        </div>
-
-                        <button className="mt-2 w-full h-11 rounded-xl text-xs font-semibold text-button-primary-text bg-accent-indigo hover:bg-accent-purple active:scale-98 hover:-translate-y-0.5 transition-all duration-200 shadow-card border border-accent-indigo/25 shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center justify-center gap-2">
-                          <Sparkles className="h-4 w-4" />
-                          <span>Analyze Route</span>
-                        </button>
-
-                        <div className="mt-6 pt-5 border-t border-border-subtle">
-                          <span className="text-[9px] font-bold uppercase tracking-widest text-text-muted">
-                            Quick Presets
-                          </span>
-                          <div className="flex flex-wrap gap-2 mt-3">
-                            <button className="px-3.5 py-2 rounded-lg bg-bg-base border border-border-subtle text-[10px] font-bold text-text-secondary hover:border-accent-indigo hover:text-accent-indigo hover:bg-bg-surface hover:shadow-flat transition-all duration-200">
-                              Home Base
-                            </button>
-                            <button className="px-3.5 py-2 rounded-lg bg-bg-base border border-border-subtle text-[10px] font-bold text-text-secondary hover:border-accent-indigo hover:text-accent-indigo hover:bg-bg-surface hover:shadow-flat transition-all duration-200">
-                              Warehouse A
-                            </button>
-                            <button className="px-3.5 py-2 rounded-lg bg-bg-base border border-border-subtle text-[10px] font-bold text-text-secondary hover:border-accent-indigo hover:text-accent-indigo hover:bg-bg-surface hover:shadow-flat transition-all duration-200">
-                              Hub Center
-                            </button>
-                          </div>
-                        </div>
-                      </div>
+                      <DispatchSetupModule />
                     </div>
 
                     <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 shadow-card hover:shadow-overlay transition-all duration-300">
@@ -535,16 +478,14 @@ export function DashboardLayout() {
                           Spatial Verification Map
                         </span>
                       </div>
-                      <div className="h-60 rounded-xl bg-bg-base border border-border-subtle flex items-center justify-center overflow-hidden shadow-flat">
-                        <div className="text-center p-4">
-                          <MapPin className="h-5 w-5 text-text-muted mx-auto mb-2 animate-bounce" />
-                          <span className="text-xs text-text-secondary block font-semibold">
-                            Map Verification Panel
-                          </span>
-                          <span className="text-[9px] text-text-muted block mt-1 uppercase tracking-wider">
-                            Interactive Leaflet Mounting Area
-                          </span>
-                        </div>
+                      <div className="h-60 rounded-xl bg-bg-base border border-border-subtle overflow-hidden shadow-flat relative">
+                        <Suspense fallback={
+                          <div className="flex items-center justify-center w-full h-full bg-bg-base">
+                            <span className="text-xs text-text-muted animate-pulse">Loading map engine...</span>
+                          </div>
+                        }>
+                          <LazyMap />
+                        </Suspense>
                       </div>
                     </div>
                   </aside>
@@ -584,10 +525,13 @@ export function DashboardLayout() {
                 <div className="block md:hidden max-w-md mx-auto pb-20">
                   {activeTab === 'setup' && (
                     <div className="rounded-2xl border border-border-subtle bg-bg-surface p-6 shadow-card">
-                      <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">
-                        Dispatch Setup
-                      </h2>
-                      <div className="mt-4 h-56 rounded-xl bg-bg-base border border-border-subtle" />
+                      <div className="flex items-center gap-2 text-text-muted mb-6">
+                        <Compass className="h-4 w-4 text-text-muted" />
+                        <span className="text-[9px] font-bold uppercase tracking-wider">
+                          Dispatch Setup
+                        </span>
+                      </div>
+                      <DispatchSetupModule />
                     </div>
                   )}
 
@@ -622,7 +566,15 @@ export function DashboardLayout() {
                       <h2 className="text-sm font-semibold uppercase tracking-wider text-text-muted">
                         Location Map
                       </h2>
-                      <div className="mt-4 h-56 rounded-xl bg-bg-base border border-border-subtle" />
+                      <div className="mt-4 h-96 rounded-xl bg-bg-base border border-border-subtle overflow-hidden relative">
+                        <Suspense fallback={
+                          <div className="flex items-center justify-center w-full h-full bg-bg-base">
+                            <span className="text-xs text-text-muted animate-pulse">Loading map engine...</span>
+                          </div>
+                        }>
+                          <LazyMap />
+                        </Suspense>
+                      </div>
                     </div>
                   )}
 
