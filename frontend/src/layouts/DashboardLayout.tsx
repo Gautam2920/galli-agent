@@ -163,7 +163,7 @@ export function DashboardLayout() {
               </div>
               {!isSidebarCollapsed && (
                 <div className="flex flex-col overflow-hidden">
-                  <span className="font-semibold text-xs tracking-tight truncate">Gautam</span>
+                  <span className="font-semibold text-xs tracking-tight truncate">User</span>
                   <span className="text-[9px] font-bold text-accent-emerald flex items-center gap-1 uppercase tracking-wider">
                     <span className="h-1.5 w-1.5 rounded-full bg-accent-emerald inline-block animate-pulse" />
                     Developer Mode
@@ -187,7 +187,7 @@ export function DashboardLayout() {
           <header className="h-16 flex items-center justify-between px-8 bg-bg-surface/90 border-b border-border-subtle backdrop-blur-md sticky top-0 z-40">
             <div className="flex flex-col">
               <h1 className="text-sm font-bold tracking-tight uppercase text-text-primary">
-                Good morning, Gautam 👋
+                Greetings, User
               </h1>
               <p className="text-[9px] text-text-muted font-bold tracking-widest uppercase mt-0.5">
                 Ready to make smart logistics decisions

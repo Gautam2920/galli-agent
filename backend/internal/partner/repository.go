@@ -12,7 +12,7 @@ func (r *Repository) GetAvailablePartners() []Partner {
 
 		{
 			ID:                "P001",
-			Name:              "Puskin Logistics",
+			Name:              "Partner 1",
 			Rating:            4.9,
 			CurrentDeliveries: 2,
 			ServiceArea:       "Varanasi",
@@ -21,7 +21,7 @@ func (r *Repository) GetAvailablePartners() []Partner {
 
 		{
 			ID:                "P002",
-			Name:              "QuickMove",
+			Name:              "Partner 2",
 			Rating:            4.5,
 			CurrentDeliveries: 5,
 			ServiceArea:       "Varanasi",
@@ -30,7 +30,7 @@ func (r *Repository) GetAvailablePartners() []Partner {
 
 		{
 			ID:                "P003",
-			Name:              "SwiftDrop",
+			Name:              "Partner 3",
 			Rating:            4.2,
 			CurrentDeliveries: 7,
 			ServiceArea:       "Varanasi",
