@@ -1,27 +1,45 @@
-import { useState } from 'react';
-import { nominatimService } from '../services/nominatimService';
+import { useCallback, useState } from "react";
+
+import { nominatimService } from "../services/nominatimService";
+import type { Location } from "@/features/dispatch";
 
 export function useReverseGeocoding() {
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<Error | null>(null);
 
-  const resolveAddress = async (lat: number, lng: number): Promise<string> => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const address = await nominatimService.reverse(lat, lng);
-      return address;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to reverse geocode');
-      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  const reverseGeocode = useCallback(
+    async (
+      latitude: number,
+      longitude: number,
+      signal?: AbortSignal
+    ): Promise<Location | null> => {
+      setLoading(true);
+      setError(null);
+
+      try {
+        return await nominatimService.reverseGeocode(
+          latitude,
+          longitude,
+          signal
+        );
+      } catch (err) {
+        setError(
+          err instanceof Error
+            ? err
+            : new Error("Reverse geocoding failed.")
+        );
+
+        return null;
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
   return {
-    resolveAddress,
-    isLoading,
-    error
+    reverseGeocode,
+    loading,
+    error,
   };
 }

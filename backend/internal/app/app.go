@@ -7,6 +7,8 @@ import (
 
 	"github.com/Gautam2920/galli-agent/backend/internal/ai/gemini"
 
+	decisionsummary "github.com/Gautam2920/galli-agent/backend/internal/decisionengine/summary"
+
 	decisionengine "github.com/Gautam2920/galli-agent/backend/internal/decisionengine"
 	"github.com/Gautam2920/galli-agent/backend/internal/decisionengine/framework"
 	"github.com/Gautam2920/galli-agent/backend/internal/decisionengine/models"
@@ -41,9 +43,10 @@ type App struct {
 }
 
 type AnalysisResult struct {
-	State         models.DecisionEngineState
-	Report        models.DeliveryIntelligenceReport
-	AIExplanation string
+	State              models.DecisionEngineState
+	Report             models.DeliveryIntelligenceReport
+	OperationalSummary decisionsummary.OperationalSummary
+	AIExplanation      string
 }
 
 func New(cfg *config.Config) *App {
@@ -246,11 +249,34 @@ func (a *App) AnalyseDeliveryWithAI(
 		Report: state.DeliveryIntelligenceReport,
 	}
 
+	operationalSummary := decisionsummary.Build(
+		state.DeliveryIntelligenceReport,
+		state.RouteAnalysis,
+		state.WeatherAnalysis,
+		state.TrafficAnalysis,
+		state.RiskAnalysis,
+		state.PartnerAnalysis,
+	)
+
+	result.OperationalSummary = operationalSummary
+
 	if a.geminiService != nil {
+
+		geminiContext := gemini.Context{
+			Report:  state.DeliveryIntelligenceReport,
+			Route:   state.RouteAnalysis,
+			Weather: state.WeatherAnalysis,
+			Traffic: state.TrafficAnalysis,
+			Risk:    state.RiskAnalysis,
+			Partner: state.PartnerAnalysis,
+			OperationalSummary: decisionsummary.Format(
+				operationalSummary,
+			),
+		}
 
 		explanation, err := a.geminiService.GenerateDeliveryExplanation(
 			ctx,
-			result.Report,
+			geminiContext,
 		)
 
 		if err != nil {

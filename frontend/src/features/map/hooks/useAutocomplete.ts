@@ -1,60 +1,88 @@
-import { useState, useEffect, useRef } from 'react';
-import { nominatimService } from '../services/nominatimService';
+import { useEffect, useRef, useState } from "react";
 
-interface AutocompleteResult {
-  address: string;
-  lat: number;
-  lng: number;
-}
+import { nominatimService } from "../services/nominatimService";
+import type { Location } from "@/features/dispatch";
 
-export function useAutocomplete(debounceMs = 500) {
-  const [query, setQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<AutocompleteResult[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+const DEBOUNCE_DELAY = 300;
+
+export function useAutocomplete() {
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<Location[]>([]);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const controllerRef = useRef<AbortController | null>(null);
+  const ignoreNextSearchRef = useRef(false);
 
   useEffect(() => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current);
-    }
-
-    if (query.trim().length < 3) {
-      setSuggestions([]);
-      setError(null);
-      setIsLoading(false);
+    if (ignoreNextSearchRef.current) {
+      ignoreNextSearchRef.current = false;
       return;
     }
 
-    setIsLoading(true);
-    setError(null);
+    const trimmed = query.trim();
 
-    timerRef.current = setTimeout(async () => {
+    if (trimmed.length < 3) {
+      controllerRef.current?.abort();
+      setResults([]);
+      setLoading(false);
+      setError(null);
+      return;
+    }
+
+    const timeout = setTimeout(async () => {
+      controllerRef.current?.abort();
+
+      const controller = new AbortController();
+      controllerRef.current = controller;
+
+      setLoading(true);
+      setError(null);
+
       try {
-        const results = await nominatimService.search(query);
-        setSuggestions(results);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-        setSuggestions([]);
-      } finally {
-        setIsLoading(false);
-      }
-    }, debounceMs);
+        const locations = await nominatimService.searchLocations(
+          trimmed,
+          controller.signal
+        );
 
-    return () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+        setResults(locations);
+      } catch (err) {
+        if (err instanceof DOMException && err.name === "AbortError") {
+          return;
+        }
+
+        setError("Unable to fetch locations.");
+        setResults([]);
+      } finally {
+        setLoading(false);
       }
-    };
-  }, [query, debounceMs]);
+    }, DEBOUNCE_DELAY);
+
+    return () => clearTimeout(timeout);
+  }, [query]);
+
+  const selectLocation = (address: string) => {
+    ignoreNextSearchRef.current = true;
+    setQuery(address);
+    setResults([]);
+  };
+
+  const clear = () => {
+    controllerRef.current?.abort();
+    setQuery("");
+    setResults([]);
+    setLoading(false);
+    setError(null);
+  };
 
   return {
     query,
     setQuery,
-    suggestions,
-    isLoading,
+    results,
+    setResults,
+    selectLocation,
+    loading,
     error,
-    setSuggestions
+    clear,
   };
 }

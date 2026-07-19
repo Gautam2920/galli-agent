@@ -5,11 +5,11 @@ export const dispatchSchema = z
     pickupLocation: z
       .string()
       .min(1, 'Pickup location is required')
-      .max(100, 'Pickup location must be under 100 characters'),
+      .max(1000, 'Pickup location must be under 1000 characters'),
     deliveryLocation: z
       .string()
       .min(1, 'Delivery location is required')
-      .max(100, 'Delivery location must be under 100 characters'),
+      .max(1000, 'Delivery location must be under 1000 characters'),
     packageType: z.enum(
       [
         'document',
@@ -20,23 +20,23 @@ export const dispatchSchema = z
         'electronics',
         'heavy_freight',
         'other',
-      ],
+      ] as const,
       {
-        errorMap: () => ({ message: 'Please select a package type' }),
+        message: 'Please select a package type',
       }
     ),
     packageWeight: z
-      .number({ invalid_type_error: 'Weight must be a number' })
+      .number({ message: 'Weight must be a number' })
       .positive('Weight must be greater than zero')
       .max(5000, 'Weight must not exceed 5000 kg'),
     vehicleType: z.enum(
-      ['bicycle', 'motorcycle', 'electric_van', 'cargo_van', 'box_truck', 'refrigerated_truck'],
+      ['bicycle', 'motorcycle', 'electric_van', 'cargo_van', 'box_truck', 'refrigerated_truck'] as const,
       {
-        errorMap: () => ({ message: 'Please select a vehicle type' }),
+        message: 'Please select a vehicle type',
       }
     ),
-    priority: z.enum(['standard', 'high', 'urgent', 'critical'], {
-      errorMap: () => ({ message: 'Please select a priority level' }),
+    priority: z.enum(['standard', 'high', 'urgent', 'critical'] as const, {
+      message: 'Please select a priority level',
     }),
     deliveryDeadline: z
       .string()

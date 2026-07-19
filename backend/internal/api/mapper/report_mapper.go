@@ -15,6 +15,17 @@ func ToAnalyseDeliveryResponse(
 
 		Confidence: result.Report.ConfidenceScore,
 
+		OperationalSummary: dto.OperationalSummaryResponse{
+			Decision:          result.OperationalSummary.Decision,
+			Confidence:        result.OperationalSummary.Confidence,
+			OverallAssessment: result.OperationalSummary.OverallAssessment,
+			RouteSummary:      result.OperationalSummary.RouteSummary,
+			WeatherSummary:    result.OperationalSummary.WeatherSummary,
+			TrafficSummary:    result.OperationalSummary.TrafficSummary,
+			RiskSummary:       result.OperationalSummary.RiskSummary,
+			PartnerSummary:    result.OperationalSummary.PartnerSummary,
+		},
+
 		Route: dto.RouteResponse{
 			DistanceKilometers: result.State.RouteAnalysis.Route.Summary.DistanceKilometers,
 			EstimatedMinutes:   result.State.RouteAnalysis.Route.Summary.EstimatedMinutes,

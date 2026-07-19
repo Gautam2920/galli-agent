@@ -2,8 +2,6 @@ package gemini
 
 import (
 	"context"
-
-	"github.com/Gautam2920/galli-agent/backend/internal/decisionengine/models"
 )
 
 type Service struct {
@@ -18,10 +16,10 @@ func NewService(client *Client) *Service {
 
 func (s *Service) GenerateDeliveryExplanation(
 	ctx context.Context,
-	report models.DeliveryIntelligenceReport,
+	geminiContext Context,
 ) (string, error) {
 
-	prompt := BuildDeliveryExplanationPrompt(report)
+	prompt := BuildDeliveryExplanationPrompt(geminiContext)
 
 	return s.client.GenerateText(
 		ctx,

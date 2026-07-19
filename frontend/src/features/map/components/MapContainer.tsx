@@ -1,101 +1,57 @@
-import { useEffect } from 'react';
-import { MapContainer as LeafletMapContainer, TileLayer, useMapEvents } from 'react-leaflet';
-import L from 'leaflet';
-import 'leaflet/dist/leaflet.css';
-import { useMapController } from '../hooks/useMapController';
-import { MapMarker } from './MapMarker';
-import type { Location } from '../../dispatch/types';
+import { MapContainer as LeafletMap, TileLayer, useMapEvents } from "react-leaflet";
+import "leaflet/dist/leaflet.css";
 
-const VARANASI_CENTER: [number, number] = [25.3176, 82.9739];
-const DEFAULT_ZOOM = 13;
+import { useMapController } from "../hooks/useMapController";
+import { MapMarker } from "./MapMarker";
 
-function MapEvents({ onMapClick }: { onMapClick: (lat: number, lng: number) => void }) {
+const DEFAULT_CENTER: [number, number] = [20.5937, 78.9629]; // India
+const DEFAULT_ZOOM = 5;
+
+function MapEvents() {
+  const { handleMapClick } = useMapController();
+
   useMapEvents({
-    click(e) {
-      onMapClick(e.latlng.lat, e.latlng.lng);
-    }
+    click(event) {
+      handleMapClick(event.latlng.lat, event.latlng.lng);
+    },
   });
-  return null;
-}
-
-function MapViewportController({
-  pickup,
-  delivery
-}: {
-  pickup: Location | null;
-  delivery: Location | null;
-}) {
-  const map = useMapEvents({});
-
-  useEffect(() => {
-    if (pickup && delivery) {
-      const bounds = L.latLngBounds([
-        [pickup.lat, pickup.lng],
-        [delivery.lat, delivery.lng]
-      ]);
-      map.fitBounds(bounds, { padding: [50, 50] });
-    } else if (pickup) {
-      map.setView([pickup.lat, pickup.lng], map.getZoom());
-    } else if (delivery) {
-      map.setView([delivery.lat, delivery.lng], map.getZoom());
-    }
-  }, [pickup, delivery, map]);
-
-  useEffect(() => {
-    const handleResize = () => {
-      map.invalidateSize();
-    };
-    window.addEventListener('resize', handleResize);
-    const timer = setTimeout(() => {
-      map.invalidateSize();
-    }, 400);
-    return () => {
-      window.removeEventListener('resize', handleResize);
-      clearTimeout(timer);
-    };
-  }, [map]);
 
   return null;
 }
 
 export function MapContainer() {
-  const {
-    pickupLocation,
-    deliveryLocation,
-    handleMapClick,
-    handleMarkerDrag
-  } = useMapController();
+  const { pickup, delivery, handleMarkerDrag } = useMapController();
 
   return (
-    <div className="w-full h-full relative">
-      <LeafletMapContainer
-        center={VARANASI_CENTER}
-        zoom={DEFAULT_ZOOM}
-        className="w-full h-full"
-        zoomControl={false}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+    <LeafletMap
+      center={DEFAULT_CENTER}
+      zoom={DEFAULT_ZOOM}
+      className="h-full w-full rounded-xl"
+    >
+      <TileLayer
+        attribution='&copy; OpenStreetMap contributors'
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+      />
+
+      <MapEvents />
+
+      {pickup && (
+        <MapMarker
+          location={pickup}
+          type="pickup"
+          onDragEnd={handleMarkerDrag}
         />
-        <MapEvents onMapClick={handleMapClick} />
-        <MapViewportController pickup={pickupLocation} delivery={deliveryLocation} />
-        {pickupLocation && (
-          <MapMarker
-            type="pickup"
-            location={pickupLocation}
-            onDragEnd={handleMarkerDrag}
-          />
-        )}
-        {deliveryLocation && (
-          <MapMarker
-            type="delivery"
-            location={deliveryLocation}
-            onDragEnd={handleMarkerDrag}
-          />
-        )}
-      </LeafletMapContainer>
-    </div>
+      )}
+
+      {delivery && (
+        <MapMarker
+          location={delivery}
+          type="delivery"
+          onDragEnd={handleMarkerDrag}
+        />
+      )}
+    </LeafletMap>
   );
 }
+
 export default MapContainer;

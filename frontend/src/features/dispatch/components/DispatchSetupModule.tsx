@@ -47,13 +47,13 @@ export function DispatchSetupModule() {
     return () => subscription.unsubscribe();
   }, [methods]);
 
-  const { pickupLocation, deliveryLocation } = useDispatchStore();
+  const { pickup, delivery } = useDispatchStore();
 
   const onSubmit = async (data: DispatchFormValues) => {
     await submitRequest({
       ...data,
-      pickupCoords: pickupLocation,
-      deliveryCoords: deliveryLocation
+      pickupCoords: pickup,
+      deliveryCoords: delivery
     } as DispatchRequest);
   };
 

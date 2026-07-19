@@ -1,4 +1,7 @@
-import axios from 'axios';
+import type { Location } from "@/features/dispatch";
+
+const BASE_URL = "https://nominatim.openstreetmap.org";
+const cache = new Map<string, unknown>();
 
 interface NominatimSearchResult {
   display_name: string;
@@ -8,98 +11,91 @@ interface NominatimSearchResult {
 
 interface NominatimReverseResult {
   display_name: string;
+  lat: string;
+  lon: string;
 }
 
-const searchCache = new Map<string, any[]>();
-const reverseCache = new Map<string, string>();
-let lastRequestTime = 0;
+const toLocation = (
+  result: NominatimSearchResult | NominatimReverseResult
+): Location => ({
+  address: result.display_name,
+  latitude: Number(result.lat),
+  longitude: Number(result.lon),
+});
 
-async function throttleRequest(): Promise<void> {
-  const now = Date.now();
-  const elapsed = now - lastRequestTime;
-  if (elapsed < 1000) {
-    const delay = 1000 - elapsed;
-    lastRequestTime = now + delay;
-    await new Promise((resolve) => setTimeout(resolve, delay));
-  } else {
-    lastRequestTime = now;
+async function request<T>(url: string, signal?: AbortSignal): Promise<T> {
+  if (cache.has(url)) {
+    return cache.get(url) as T;
+  }
+
+  const response = await fetch(url, {
+    signal,
+    headers: {
+      Accept: "application/json",
+    },
+  });
+
+  if (response.status === 429) {
+    throw new Error("Nominatim rate limit exceeded.");
+  }
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch location data.");
+  }
+
+  const data = (await response.json()) as T;
+
+  cache.set(url, data);
+
+  return data;
+}
+
+export async function searchLocations(
+  query: string,
+  signal?: AbortSignal
+): Promise<Location[]> {
+  const trimmed = query.trim();
+
+  if (trimmed.length < 3) {
+    return [];
+  }
+
+  const url =
+    `${BASE_URL}/search?` +
+    new URLSearchParams({
+      q: trimmed,
+      format: "jsonv2",
+      limit: "5",
+      addressdetails: "0",
+    });
+
+  const results = await request<NominatimSearchResult[]>(url, signal);
+
+  return results.map(toLocation);
+}
+
+export async function reverseGeocode(
+  latitude: number,
+  longitude: number,
+  signal?: AbortSignal
+): Promise<Location | null> {
+  const url =
+    `${BASE_URL}/reverse?` +
+    new URLSearchParams({
+      lat: latitude.toString(),
+      lon: longitude.toString(),
+      format: "jsonv2",
+    });
+
+  try {
+    const result = await request<NominatimReverseResult>(url, signal);
+    return toLocation(result);
+  } catch {
+    return null;
   }
 }
 
 export const nominatimService = {
-  async search(query: string): Promise<{ address: string; lat: number; lng: number }[]> {
-    const trimmed = query.trim().toLowerCase();
-    if (trimmed.length < 3) return [];
-    
-    if (searchCache.has(trimmed)) {
-      return searchCache.get(trimmed) || [];
-    }
-
-    await throttleRequest();
-
-    try {
-      const response = await axios.get<NominatimSearchResult[]>(
-        'https://nominatim.openstreetmap.org/search',
-        {
-          params: {
-            q: query,
-            format: 'json',
-            limit: 5,
-            addressdetails: 1
-          },
-          headers: {
-            'User-Agent': 'GalliAgentLogistics/1.0.0'
-          }
-        }
-      );
-
-      const results = (response.data || []).map((item) => ({
-        address: item.display_name,
-        lat: parseFloat(item.lat),
-        lng: parseFloat(item.lon)
-      }));
-
-      searchCache.set(trimmed, results);
-      return results;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 429) {
-        throw new Error('Rate limit exceeded. Please wait a moment.');
-      }
-      throw new Error('Failed to fetch location suggestions.');
-    }
-  },
-
-  async reverse(lat: number, lng: number): Promise<string> {
-    const cacheKey = `${lat.toFixed(5)},${lng.toFixed(5)}`;
-    if (reverseCache.has(cacheKey)) {
-      return reverseCache.get(cacheKey) || '';
-    }
-
-    await throttleRequest();
-
-    try {
-      const response = await axios.get<NominatimReverseResult>(
-        'https://nominatim.openstreetmap.org/reverse',
-        {
-          params: {
-            lat,
-            lon: lng,
-            format: 'json'
-          },
-          headers: {
-            'User-Agent': 'GalliAgentLogistics/1.0.0'
-          }
-        }
-      );
-
-      const address = response.data?.display_name || `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-      reverseCache.set(cacheKey, address);
-      return address;
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status === 429) {
-        throw new Error('Rate limit exceeded. Please wait a moment.');
-      }
-      return `${lat.toFixed(5)}, ${lng.toFixed(5)}`;
-    }
-  }
+  searchLocations,
+  reverseGeocode,
 };

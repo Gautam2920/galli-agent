@@ -11,16 +11,24 @@ import type {
   ActiveMarker,
   DispatchState,
   Location,
+  AnalyseDeliveryResponse,
+  DispatchRequest,
 } from "../types";
 
 interface DispatchContextValue {
   pickup: Location | null;
   delivery: Location | null;
   activeMarker: ActiveMarker;
+  analysisResult: AnalyseDeliveryResponse | null;
+  isAnalyzing: boolean;
+  currentRequest: DispatchRequest | null;
 
   setPickup(location: Location): void;
   setDelivery(location: Location): void;
   setActiveMarker(marker: ActiveMarker): void;
+  setAnalysisResult(result: AnalyseDeliveryResponse | null): void;
+  setIsAnalyzing(isAnalyzing: boolean): void;
+  setCurrentRequest(request: DispatchRequest | null): void;
 
   swapLocations(): void;
   clearPickup(): void;
@@ -32,6 +40,9 @@ const initialState: DispatchState = {
   pickup: null,
   delivery: null,
   activeMarker: "pickup",
+  analysisResult: null,
+  isAnalyzing: false,
+  currentRequest: null,
 };
 
 const DispatchContext = createContext<DispatchContextValue | undefined>(
@@ -89,6 +100,24 @@ export function DispatchProvider({
     []
   );
 
+  const setAnalysisResult = useCallback(
+    (analysisResult: AnalyseDeliveryResponse | null) =>
+      setState((s) => ({ ...s, analysisResult })),
+    []
+  );
+
+  const setIsAnalyzing = useCallback(
+    (isAnalyzing: boolean) =>
+      setState((s) => ({ ...s, isAnalyzing })),
+    []
+  );
+
+  const setCurrentRequest = useCallback(
+    (currentRequest: DispatchRequest | null) =>
+      setState((s) => ({ ...s, currentRequest })),
+    []
+  );
+
   const resetLocations = useCallback(() => {
     setState((s) => ({
       ...s,
@@ -102,17 +131,35 @@ export function DispatchProvider({
       pickup: state.pickup,
       delivery: state.delivery,
       activeMarker: state.activeMarker,
+      analysisResult: state.analysisResult,
+      isAnalyzing: state.isAnalyzing,
+      currentRequest: state.currentRequest,
 
       setPickup,
       setDelivery,
       setActiveMarker,
+      setAnalysisResult,
+      setIsAnalyzing,
+      setCurrentRequest,
 
       swapLocations,
       clearPickup,
       clearDelivery,
       resetLocations,
     }),
-    [state, setPickup, setDelivery, setActiveMarker, swapLocations, clearPickup, clearDelivery, resetLocations]
+    [
+      state,
+      setPickup,
+      setDelivery,
+      setActiveMarker,
+      setAnalysisResult,
+      setIsAnalyzing,
+      setCurrentRequest,
+      swapLocations,
+      clearPickup,
+      clearDelivery,
+      resetLocations,
+    ]
   );
 
   return (

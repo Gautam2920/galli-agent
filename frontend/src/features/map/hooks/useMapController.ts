@@ -1,49 +1,80 @@
-import { useDispatchStore } from '../../dispatch/store/dispatchStore';
-import { useReverseGeocoding } from './useReverseGeocoding';
-import type { Location } from '../../dispatch/types';
+import { useCallback } from "react";
+import type { Map as LeafletMap } from "leaflet";
+import { useDispatchStore } from "@/features/dispatch";
+import { useReverseGeocoding } from "./useReverseGeocoding";
 
 export function useMapController() {
   const {
-    pickupLocation,
-    setPickupLocation,
-    deliveryLocation,
-    setDeliveryLocation,
-    activeMarkerMode,
-    setActiveMarkerMode
+    pickup,
+    delivery,
+    activeMarker,
+    setPickup,
+    setDelivery,
   } = useDispatchStore();
 
-  const { resolveAddress } = useReverseGeocoding();
+  const { reverseGeocode, loading, error } =
+    useReverseGeocoding();
 
-  const handleMapClick = async (lat: number, lng: number) => {
-    const address = await resolveAddress(lat, lng);
-    const newLocation: Location = { address, lat, lng };
+  const handleMapClick = useCallback(
+    async (latitude: number, longitude: number) => {
+      const location = await reverseGeocode(
+        latitude,
+        longitude
+      );
 
-    if (activeMarkerMode === 'pickup') {
-      setPickupLocation(newLocation);
-      setActiveMarkerMode('delivery');
-    } else {
-      setDeliveryLocation(newLocation);
-      setActiveMarkerMode('pickup');
-    }
-  };
+      if (!location) {
+        return;
+      }
 
-  const handleMarkerDrag = async (type: 'pickup' | 'delivery', lat: number, lng: number) => {
-    const address = await resolveAddress(lat, lng);
-    const newLocation: Location = { address, lat, lng };
+      if (activeMarker === "pickup") {
+        setPickup(location);
+      } else {
+        setDelivery(location);
+      }
+    },
+    [
+      activeMarker,
+      reverseGeocode,
+      setPickup,
+      setDelivery,
+    ]
+  );
 
-    if (type === 'pickup') {
-      setPickupLocation(newLocation);
-    } else {
-      setDeliveryLocation(newLocation);
-    }
-  };
+  const handleMarkerDrag = useCallback(
+    async (type: "pickup" | "delivery", latitude: number, longitude: number) => {
+      const location = await reverseGeocode(latitude, longitude);
+      if (!location) return;
+      if (type === "pickup") {
+        setPickup(location);
+      } else {
+        setDelivery(location);
+      }
+    },
+    [reverseGeocode, setPickup, setDelivery]
+  );
+
+  const focusLocation = useCallback(
+    (
+      map: LeafletMap,
+      latitude: number,
+      longitude: number,
+      zoom = 15
+    ) => {
+      map.flyTo([latitude, longitude], zoom, {
+        duration: 0.5,
+      });
+    },
+    []
+  );
 
   return {
-    pickupLocation,
-    deliveryLocation,
-    activeMarkerMode,
-    setActiveMarkerMode,
+    pickup,
+    delivery,
+    activeMarker,
+    loading,
+    error,
     handleMapClick,
-    handleMarkerDrag
+    handleMarkerDrag,
+    focusLocation,
   };
 }

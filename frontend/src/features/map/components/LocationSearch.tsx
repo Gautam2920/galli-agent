@@ -1,126 +1,145 @@
-import { useEffect } from 'react';
-import { useFormContext } from 'react-hook-form';
-import { MapPin, Loader2 } from 'lucide-react';
-import { useAutocomplete } from '../hooks/useAutocomplete';
-import { useDispatchStore } from '../../dispatch/store/dispatchStore';
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Search, Loader2 } from "lucide-react";
+
+import type { Location } from "@/features/dispatch";
+import { useAutocomplete } from "../hooks/useAutocomplete";
 
 interface LocationSearchProps {
-  type: 'pickup' | 'delivery';
-  label: string;
-  placeholder: string;
-  error?: any;
+  value?: string;
+  placeholder?: string;
+  onSelect(location: Location): void;
+  onFocus?(): void;
+  onChange?(value: string): void;
 }
 
-export function LocationSearch({ type, label, placeholder, error }: LocationSearchProps) {
-  const { setValue } = useFormContext();
-  const {
-    pickupLocation,
-    deliveryLocation,
-    setPickupLocation,
-    setDeliveryLocation,
-    setActiveMarkerMode
-  } = useDispatchStore();
-
-  const storeLocation = type === 'pickup' ? pickupLocation : deliveryLocation;
-
+export function LocationSearch({
+  value = "",
+  placeholder = "Search location...",
+  onSelect,
+  onFocus,
+  onChange,
+}: LocationSearchProps) {
   const {
     query,
     setQuery,
-    suggestions,
-    isLoading,
-    setSuggestions
-  } = useAutocomplete(500);
+    results,
+    setResults,
+    selectLocation,
+    loading,
+    error,
+  } = useAutocomplete();
 
   useEffect(() => {
-    if (storeLocation) {
-      setQuery(storeLocation.address);
-      setValue(type === 'pickup' ? 'pickupLocation' : 'deliveryLocation', storeLocation.address, {
-        shouldValidate: true
-      });
-    } else {
-      setQuery('');
-      setValue(type === 'pickup' ? 'pickupLocation' : 'deliveryLocation', '', {
-        shouldValidate: true
-      });
-    }
-  }, [storeLocation, setValue, type, setQuery]);
+    setQuery(value);
+  }, [value, setQuery]);
 
-  const handleSelect = (item: { address: string; lat: number; lng: number }) => {
-    const loc = { address: item.address, lat: item.lat, lng: item.lng };
-    if (type === 'pickup') {
-      setPickupLocation(loc);
-      setActiveMarkerMode('delivery');
-    } else {
-      setDeliveryLocation(loc);
-      setActiveMarkerMode('pickup');
+  const inputRef = useRef<HTMLInputElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [dropdownCoords, setDropdownCoords] = useState<{
+    top: number;
+    left: number;
+    width: number;
+  } | null>(null);
+
+  const updateCoords = () => {
+    if (inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect();
+      setDropdownCoords({
+        top: rect.bottom,
+        left: rect.left,
+        width: rect.width,
+      });
     }
-    setSuggestions([]);
   };
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value;
-    setQuery(val);
-    setValue(type === 'pickup' ? 'pickupLocation' : 'deliveryLocation', val, {
-      shouldValidate: true
-    });
-    if (!val) {
-      if (type === 'pickup') {
-        setPickupLocation(null);
-      } else {
-        setDeliveryLocation(null);
+  useEffect(() => {
+    if (results.length > 0) {
+      updateCoords();
+      window.addEventListener("scroll", updateCoords, true);
+      window.addEventListener("resize", updateCoords);
+    }
+    return () => {
+      window.removeEventListener("scroll", updateCoords, true);
+      window.removeEventListener("resize", updateCoords);
+    };
+  }, [results]);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (
+        dropdownRef.current &&
+        !dropdownRef.current.contains(e.target as Node) &&
+        inputRef.current &&
+        !inputRef.current.contains(e.target as Node)
+      ) {
+        setResults([]);
       }
-    }
-  };
+    };
+
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+    };
+  }, [setResults]);
 
   return (
-    <div className="flex flex-col gap-1.5 relative">
-      <div className="flex items-center justify-between">
-        <label
-          htmlFor={`${type}-search`}
-          className="text-[9px] font-bold uppercase tracking-wider text-text-secondary"
-        >
-          {label}
-        </label>
-        {isLoading && <Loader2 className="h-3 w-3 animate-spin text-accent-indigo" />}
-      </div>
-      
+    <div className="relative w-full">
       <div className="relative">
+        <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+
         <input
-          id={`${type}-search`}
-          type="text"
+          ref={inputRef}
           value={query}
-          onChange={handleInputChange}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            onChange?.(e.target.value);
+          }}
+          onFocus={onFocus}
           placeholder={placeholder}
-          className={`w-full h-11 pl-10 pr-4 rounded-xl border bg-bg-base/70 text-xs focus:outline-none focus:ring-2 focus:ring-accent-indigo/15 transition-all duration-200 shadow-[inset_0_2px_4px_rgba(36,32,56,0.02)] ${
-            error
-              ? 'border-accent-rose focus:border-accent-rose'
-              : 'border-border-subtle focus:border-accent-indigo'
-          }`}
+          className="w-full rounded-lg border bg-background py-2 pl-10 pr-3 text-sm outline-none"
         />
-        <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-text-muted" />
+
+        {loading && (
+          <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin" />
+        )}
       </div>
 
-      {suggestions.length > 0 && (
-        <div className="absolute left-0 right-0 z-50 top-[64px] rounded-xl border border-border-subtle bg-bg-surface shadow-overlay max-h-48 overflow-y-auto p-1.5">
-          {suggestions.map((item) => (
-            <button
-              key={`${item.lat}-${item.lng}-${item.address}`}
-              type="button"
-              onClick={() => handleSelect(item)}
-              className="w-full text-left px-3.5 py-2.5 rounded-lg text-[11px] text-text-primary hover:bg-bg-base hover:text-accent-indigo transition-colors duration-150 truncate cursor-pointer"
-            >
-              {item.address}
-            </button>
-          ))}
-        </div>
-      )}
+      {results.length > 0 &&
+        dropdownCoords &&
+        createPortal(
+          <div
+            ref={dropdownRef}
+            className="fixed z-[9999] mt-1 max-h-64 overflow-auto rounded-lg border border-border-subtle bg-bg-surface shadow-overlay"
+            style={{
+              top: `${dropdownCoords.top}px`,
+              left: `${dropdownCoords.left}px`,
+              width: `${dropdownCoords.width}px`,
+            }}
+          >
+            {results.map((location) => (
+              <button
+                key={`${location.latitude}-${location.longitude}-${location.address}`}
+                type="button"
+                className="w-full px-4 py-3 text-left hover:bg-muted text-sm block cursor-pointer text-text-primary"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onSelect(location);
+                  selectLocation(location.address);
+                }}
+              >
+                {location.address}
+              </button>
+            ))}
+          </div>,
+          document.body
+        )}
 
       {error && (
-        <span className="text-[10px] font-bold text-accent-rose mt-0.5">
-          {error.message as string}
-        </span>
+        <p className="mt-2 text-sm text-destructive">
+          {error}
+        </p>
       )}
     </div>
   );
 }
-export default LocationSearch;

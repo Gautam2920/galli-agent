@@ -1,4 +1,4 @@
-import { ReactNode, useState, lazy, Suspense } from 'react';
+import { useState, lazy, Suspense, type ReactNode } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { DispatchProvider } from "@/features/dispatch";
 

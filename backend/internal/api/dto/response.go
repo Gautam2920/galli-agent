@@ -32,14 +32,26 @@ type PartnerResponse struct {
 	Reason string  `json:"reason"`
 }
 
+type OperationalSummaryResponse struct {
+	Decision          string `json:"decision"`
+	Confidence        int    `json:"confidence"`
+	OverallAssessment string `json:"overallAssessment"`
+	RouteSummary      string `json:"routeSummary"`
+	WeatherSummary    string `json:"weatherSummary"`
+	TrafficSummary    string `json:"trafficSummary"`
+	RiskSummary       string `json:"riskSummary"`
+	PartnerSummary    string `json:"partnerSummary"`
+}
+
 type AnalyseDeliveryResponse struct {
-	Decision      string          `json:"decision"`
-	Confidence    int             `json:"confidence"`
-	Route         RouteResponse   `json:"route"`
-	Weather       WeatherResponse `json:"weather"`
-	Traffic       TrafficResponse `json:"traffic"`
-	Risk          RiskResponse    `json:"risk"`
-	Partner       PartnerResponse `json:"partner"`
-	Reason        string          `json:"reason"`
-	AIExplanation string          `json:"aiExplanation,omitempty"`
+	Decision           string                     `json:"decision"`
+	Confidence         int                        `json:"confidence"`
+	OperationalSummary OperationalSummaryResponse `json:"operationalSummary"`
+	Route              RouteResponse              `json:"route"`
+	Weather            WeatherResponse            `json:"weather"`
+	Traffic            TrafficResponse            `json:"traffic"`
+	Risk               RiskResponse               `json:"risk"`
+	Partner            PartnerResponse            `json:"partner"`
+	Reason             string                     `json:"reason"`
+	AIExplanation      string                     `json:"aiExplanation,omitempty"`
 }
